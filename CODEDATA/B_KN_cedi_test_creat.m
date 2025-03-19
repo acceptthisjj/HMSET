@@ -1,34 +1,62 @@
-function [new_data,new_label]=B_KN_cedi_test_creat(data1,label1,testdata,testlabel,k,weight1,weight2)
-%dataÊı¾İ ĞĞÑù±¾ ÁĞÌØÕ÷ mxn
-%labelÊı¾İ±êÇ© mx1
-%classÊı¾İÀà±ğ¸öÊı
-%k½üÁÚ¸öÊı£¨Ã¿¸ö°üÂçk+1¸öÑù±¾£©
-%¶àÀà±êÇ©
-%weight1 Ö÷Ñù±¾È¨ÖØ
-%weight2 k*¸±Ñù±¾È¨ÖØ
-%wÊôĞÔµÄÖØÒª³Ì¶È
+% å‡è®¾ trainData æ˜¯è®­ç»ƒé›†ç‰¹å¾çŸ©é˜µï¼ŒtrainLabels æ˜¯è®­ç»ƒé›†æ ‡ç­¾å‘é‡
+% testData æ˜¯æµ‹è¯•é›†ç‰¹å¾çŸ©é˜µï¼Œæ¯ä¸€è¡Œæ˜¯ä¸€ä¸ªæµ‹è¯•æ ·æœ¬
+function [new_data,new_label]=B_KN_cedi_test_creatN1(trainData,trainLabels,testData,testlabel,k,weight1,weight2)
+% è®¡ç®—æµ‹è¯•é›†ä¸­æ¯ä¸ªæ ·æœ¬ä¸è®­ç»ƒé›†ä¸­æ‰€æœ‰æ ·æœ¬çš„æ¬§æ°è·ç¦»
+numTestSamples = size(testData, 1);
+numNearestNeighbors = k;
+ new_data=[];
+ new_label=[];
+ t=[];
+% é¢„å…ˆåˆ†é…ç©ºé—´æ¥å­˜å‚¨ç»“æœ
+nearestNeighborsIdx = zeros(numTestSamples, numNearestNeighbors);
+nearestNeighborsLabels = zeros(numTestSamples, numNearestNeighbors);
+ 
+for i = 1:numTestSamples
+    % è®¡ç®—æµ‹è¯•æ ·æœ¬ä¸æ‰€æœ‰è®­ç»ƒæ ·æœ¬çš„æ¬§æ°è·ç¦»
+   % distances = sqrt(sum((trainData - testData(i, :)).^2, 2));
+    distances=KN_chediT(testData,trainData,k);
+    % è·å–æœ€è¿‘çš„ numNearestNeighbors ä¸ªè®­ç»ƒæ ·æœ¬çš„ç´¢å¼•
+    [~, sortedIdx] = sort(distances(i,:));
+    nearestIdx = sortedIdx(1:numNearestNeighbors);
+    
+    nearestLabels = trainLabels(nearestIdx);
 
-[m,n]=size(testdata);
-label=[testlabel;label1];
-data=[testdata;data1];
+    %labelCounts = histcounts(nearestLabels, [min(trainLabels)-0.5, max(trainLabels)+0.5, 1]);
+    [uniqueValues, ~, idx] = unique(nearestLabels);
+    counts = accumarray(idx, 1);
+    [maxValue, maxLabelIdx] = max(counts);
+     mostFrequentNumber = uniqueValues(maxLabelIdx);
+     maxLabel =mostFrequentNumber;
+    
+    nearestNeighborsT = nearestIdx(nearestLabels ==   mostFrequentNumber);
+    if numel(nearestNeighborsT) < numNearestNeighbors
+        % æ‰¾å‡ºæ‰€æœ‰æ ‡ç­¾ä¸º maxLabel çš„è®­ç»ƒæ ·æœ¬ç´¢å¼•
+        maxLabelIdxTrain = find(trainLabels ==   maxLabel);
+        
+        % è®¡ç®—æµ‹è¯•æ ·æœ¬ä¸è¿™äº›æ ‡ç­¾ä¸º maxLabel çš„è®­ç»ƒæ ·æœ¬çš„è·ç¦»
+%         distancesToMaxLabel = sqrt(sum((trainData(maxLabelIdxTrain, :) - testData(i, :)).^2, 2));
+         distancesToMaxLabel=KN_chediT(testData,trainData(maxLabelIdxTrain, :),2);
+        % è·å–æœ€è¿‘çš„ numNearestNeighbors - numel(nearestNeighborsIdx(i, :)) ä¸ªæ ·æœ¬çš„ç´¢å¼•
+        [~, additionalSortedIdx] = sort(distancesToMaxLabel(i,:));
+         nearestIdx = additionalSortedIdx(1:numNearestNeighbors);
 
-uni=unique(label);%´ÓĞ¡µ½´ó ÅÅĞò
-for i=1:size(uni,1)
-    A_index{i}=find(label==uni(i));
-    A_data{i}=data(A_index{i},:);
-    map=KN_chedi(A_data{i},2);
-   [mapnum{i},mapidx{i}]=sort(map,2);%ÅÅĞò
-end
-new_data=[];
-new_label=[];
-for i=1:m
-    fkey=find(uni==label(i,1));
-        idx_inDi=find(A_index{fkey}==i);
-        %ÕÒµ½¸ÃÑù±¾µÄk½üÁÚ²âµØÈ¨ÖØÑù±¾
-        per=A_data{fkey}(mapidx{fkey}(idx_inDi,1:k+1),:);
-        per(1,:)=per(1,:).*weight1;
-        per(2:end,:)=per(2:end,:).*(weight2/(k));
+   
+      nearestNeighborsIdx(i, :)=nearestIdx;
+      %nearestNeighborsLabels(i, :)=nearestLabels(nearestLabels ==  mostFrequentNumber);
+       per(1,:)=testData(i,:).*weight1;       
+        per(2:k+1,:)=trainData(nearestNeighborsIdx(i,:),:).*weight2;
+        M=[repelem(maxLabel,k+1,1)];
+    else
+    nearestNeighborsIdx(i, :) = nearestIdx(nearestLabels ==   mostFrequentNumber);
+    nearestNeighborsLabels(i, :) = nearestLabels(nearestLabels ==  mostFrequentNumber);
+     per(1,:)=testData(i,:).*weight1;       
+        per(2:k+1,:)=trainData(nearestNeighborsIdx(i,:),:).*weight2;
+        M=[nearestNeighborsLabels(i);(nearestNeighborsLabels(i,:))'];
+     end
+
         new_data=[new_data;per];
-        new_label=[new_label;repelem(uni(fkey,1),k+1,1)];
+        
+        new_label=[new_label;M];
+        t=[t;repelem(testlabel(i),k+1,1)];
 end
 end

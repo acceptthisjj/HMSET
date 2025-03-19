@@ -1,26 +1,26 @@
 function [new_data,new_label]=B_KN_cedi_train_creat(data,label,k,weight1,weight2)
-%dataÊı¾İ ĞĞÑù±¾ ÁĞÌØÕ÷ mxn
-%labelÊı¾İ±êÇ© mx1
-%classÊı¾İÀà±ğ¸öÊı
-%k½üÁÚ¸öÊı£¨Ã¿¸ö°üÂçk+1¸öÑù±¾£©
-%¶àÀà±êÇ©
-%weight1 Ö÷Ñù±¾È¨ÖØ
-%weight2 k*¸±Ñù±¾È¨ÖØ
-%wÊôĞÔµÄÖØÒª³Ì¶È
-new_data=[];
-new_label=[];
+%dataæ•°æ® è¡Œæ ·æœ¬ åˆ—ç‰¹å¾ mxn
+%labelæ•°æ®æ ‡ç­¾ mx1
+%classæ•°æ®ç±»åˆ«ä¸ªæ•°
+%kè¿‘é‚»ä¸ªæ•°ï¼ˆæ¯ä¸ªåŒ…ç»œk+1ä¸ªæ ·æœ¬ï¼‰
+%å¤šç±»æ ‡ç­¾
+%weight1 ä¸»æ ·æœ¬æƒé‡
+%weight2 k*å‰¯æ ·æœ¬æƒé‡
+%wå±æ€§çš„é‡è¦ç¨‹åº¦
+
 [m,n]=size(data);
-uni=unique(label);%´ÓĞ¡µ½´ó ÅÅĞò
+uni=unique(label);
 for i=1:size(uni,1)
     A_index{i}=find(label==uni(i));
     A_data{i}=data(A_index{i},:);
     map=KN_chedi(A_data{i},2);
-   [mapnum{i},mapidx{i}]=sort(map,2);%ÅÅĞò
+   [mapnum{i},mapidx{i}]=sort(map,2);
 end
+new_data=[];
+new_label=[];
 for i=1:m
     fkey=find(uni==label(i,1));
-        idx_inDi=find(A_index{fkey}==i);%»ñÈ¡ÔÚÊı¾İÎ»ÖÃ
-        %ÕÒµ½¸ÃÑù±¾µÄk½üÁÚ²âµØÈ¨ÖØÑù±¾
+        idx_inDi=find(A_index{fkey}==i);
         per=A_data{fkey}(mapidx{fkey}(idx_inDi,1:k+1),:);
         per(1,:)=per(1,:).*weight1;
         per(2:end,:)=per(2:end,:).*(weight2/(k));
